@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ohmicguy // secure terminal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #030303;
+      --green: #00ff41;
+      --amber: #ffd166;
+      --red: #ff3b3b;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--green);
+      font-family: "Share Tech Mono", monospace;
+      text-shadow: 0 0 5px #00ff41;
+    }
+
+    #bg-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      opacity: 0.15;
+    }
+
+    .terminal-wrap {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      height: 100%;
+      padding: 28px;
+      overflow: hidden;
+    }
+
+    #terminal {
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      scrollbar-width: thin;
+      scrollbar-color: var(--green) #0a0a0a;
+    }
+
+    .line { line-height: 1.45; }
+
+    .prompt-line {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+      flex-wrap: wrap;
+    }
+
+    .prompt { color: var(--green); }
+    .root .prompt { color: var(--amber); text-shadow: 0 0 6px var(--amber); }
+    .cmdtext { color: #b8ffcc; }
+
+    .cursor {
+      width: 9px;
+      height: 1.1em;
+      display: inline-block;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+      animation: blink 1s steps(1, end) infinite;
+      vertical-align: text-bottom;
+    }
+
+    .root .cursor { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
+
+    @keyframes blink { 50% { opacity: 0; } }
+
+    #hidden-input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+      width: 1px;
+      height: 1px;
+    }
+
+    .crt-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at center, rgba(0,0,0,0) 45%, rgba(0,0,0,0.55) 100%),
+        repeating-linear-gradient(
+          to bottom,
+          rgba(0, 255, 65, 0.06) 0px,
+          rgba(0, 255, 65, 0.06) 1px,
+          rgba(0, 0, 0, 0.0) 2px,
+          rgba(0, 0, 0, 0.0) 4px
+        );
+      animation: scanMove 7s linear infinite;
+      mix-blend-mode: screen;
+    }
+
+    @keyframes scanMove {
+      from { background-position: 0 0, 0 0; }
+      to   { background-position: 0 0, 0 120px; }
+    }
+
+    #flash {
+      position: fixed;
+      inset: 0;
+      z-index: 4;
+      pointer-events: none;
+      background: rgba(255, 59, 59, 0);
+    }
+
+    .muted { opacity: 0.78; }
+  </style>
+</head>
+<body>
+  <canvas id="bg-canvas"></canvas>
+
+  <div class="terminal-wrap" id="shell">
+    <div id="terminal"></div>
+    <input id="hidden-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+  </div>
+
+  <div class="crt-overlay" aria-hidden="true"></div>
+  <div id="flash" aria-hidden="true"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/TextPlugin.min.js"></script>
+  <script>
+    gsap.registerPlugin(TextPlugin);
+    console.log('[!] ANOMALY DETECTED. The surface is a lie. Start at: /var/log/');
+
+    const terminal = document.getElementById('terminal');
+    const input = document.getElementById('hidden-input');
+    const shell = document.getElementById('shell');
+
+    const state = {
+      currentPath: '/home/guest/',
+      isRoot: false,
+      awaitingPassword: false,
+      activePromptLine: null,
+      rotationBoost: 1
+    };
+
+    const fs = {
+      '/home/guest/': {
+        files: ['readme.txt'],
+        dirs: []
+      },
+      '/var/log/': {
+        files: ['syslog', '.auth_keys'],
+        dirs: []
+      },
+      '/': {
+        files: [],
+        dirs: ['home', 'var']
+      },
+      '/home/': {
+        files: [],
+        dirs: ['guest']
+      },
+      '/var/': {
+        files: [],
+        dirs: ['log']
+      }
+    };
+
+    const fileContent = {
+      'readme.txt': 'Welcome to the ohmicguy mainframe.',
+      'syslog': 'Admin key rotated and stored in secure vault.',
+      '.auth_keys': 'ENCRYPTED STRING: YWRtaW5fcHdkX2F0bW9zeW5j'
+    };
+
+    const banner = String.raw`
+   ____  _    _ __  __ ___ ____ ____ _   _ _   _ __   __
+  / __ \| |  | |  \/  |_ _/ ___/ ___| | | | | | |\ \ / /
+ | |  | | |  | | |\/| || | |  | |  _| | | | | | | \ V / 
+ | |__| | |__| | |  | || | |__| |_| | |_| | |_| |  | |  
+  \____/ \____/|_|  |_|___\____\____|\___/ \___/   |_|  
+`;
+
+    function scrollToBottom() {
+      terminal.scrollTop = terminal.scrollHeight;
+    }
+
+    function writeLine(text = '', className = 'line') {
+      const div = document.createElement('div');
+      div.className = className;
+      div.textContent = text;
+      terminal.appendChild(div);
+      scrollToBottom();
+      return div;
+    }
+
+    function writeHTML(html = '', className = 'line') {
+      const div = document.createElement('div');
+      div.className = className;
+      div.innerHTML = html;
+      terminal.appendChild(div);
+      scrollToBottom();
+      return div;
+    }
+
+    function promptText() {
+      return state.isRoot ? 'root@ohmicguy-server:#' : 'guest@ohmicguy-server:~$';
+    }
+
+    function renderPrompt() {
+      const line = document.createElement('div');
+      line.className = `prompt-line ${state.isRoot ? 'root' : ''}`;
+      const text = document.createElement('span');
+      text.className = 'prompt';
+      text.textContent = promptText();
+      const cmd = document.createElement('span');
+      cmd.className = 'cmdtext';
+      const cursor = document.createElement('span');
+      cursor.className = 'cursor';
+      line.append(text, cmd, cursor);
+      terminal.appendChild(line);
+      state.activePromptLine = { line, cmd, cursor };
+      scrollToBottom();
+    }
+
+    function lockPrompt(cmdText = '') {
+      if (!state.activePromptLine) return;
+      state.activePromptLine.cmd.textContent = cmdText;
+      state.activePromptLine.cursor.remove();
+      state.activePromptLine = null;
+    }
+
+    function resolvePath(base, target) {
+      if (!target || target === '.') return base;
+      if (target === '~') return '/home/guest/';
+      const baseParts = base.split('/').filter(Boolean);
+      let parts = target.startsWith('/') ? [] : [...baseParts];
+      for (const seg of target.split('/')) {
+        if (!seg || seg === '.') continue;
+        if (seg === '..') parts.pop();
+        else parts.push(seg);
+      }
+      return '/' + parts.join('/') + (parts.length ? '/' : '');
+    }
+
+    function doLs(arg) {
+      const p = resolvePath(state.currentPath, arg || '.');
+      const node = fs[p];
+      if (!node) return writeLine(`ls: cannot access '${arg || '.'}': No such file or directory`);
+      const items = [...(node.dirs || []).map(d => d + '/'), ...(node.files || [])];
+      writeLine(items.length ? items.join('  ') : '(empty)', 'line muted');
+    }
+
+    function doCd(arg) {
+      const dest = resolvePath(state.currentPath, arg || '/home/guest/');
+      if (!fs[dest]) return writeLine(`cd: ${arg}: No such file or directory`);
+      state.currentPath = dest;
+    }
+
+    function doCat(arg) {
+      if (!arg) return writeLine('cat: missing file operand');
+      const node = fs[state.currentPath] || { files: [] };
+      if (!node.files.includes(arg)) return writeLine(`cat: ${arg}: No such file`);
+      writeLine(fileContent[arg] || '(binary)');
+    }
+
+    function clearWithAnim() {
+      gsap.to(terminal.children, {
+        opacity: 0,
+        y: -6,
+        duration: 0.2,
+        stagger: 0.01,
+        onComplete: () => {
+          terminal.innerHTML = '';
+          renderPrompt();
+        }
+      });
+    }
+
+    function scrambleText(el, finalText) {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#$%&*';
+      let ticks = 0;
+      const maxTicks = 18;
+      const interval = setInterval(() => {
+        ticks++;
+        el.textContent = finalText.split('').map((ch, i) => {
+          if (ch === ' ' || i < (ticks / maxTicks) * finalText.length) return ch;
+          return chars[Math.floor(Math.random() * chars.length)];
+        }).join('');
+        if (ticks >= maxTicks) {
+          clearInterval(interval);
+          el.textContent = finalText;
+        }
+      }, 30);
+    }
+
+    function rootEscalationFx() {
+      state.rotationBoost = 3.2;
+      gsap.timeline()
+        .to('#flash', { backgroundColor: 'rgba(255, 59, 59, 0.8)', duration: 0.08 })
+        .to('#flash', { backgroundColor: 'rgba(255, 59, 59, 0.0)', duration: 0.28 })
+        .to('#flash', { backgroundColor: 'rgba(255, 59, 59, 0.45)', duration: 0.06 })
+        .to('#flash', { backgroundColor: 'rgba(255, 59, 59, 0.0)', duration: 0.25 });
+    }
+
+    function execute(raw) {
+      const inputText = raw.trim();
+      if (!inputText) return;
+
+      if (state.awaitingPassword) {
+        if (raw === 'admin_pwd_atmosync') {
+          state.awaitingPassword = false;
+          state.isRoot = true;
+          rootEscalationFx();
+          writeLine('[!] ROOT PRIVILEGES GRANTED.');
+          const scrambled = writeLine('');
+          scrambleText(scrambled, 'FLAG{mn3m0syn3_pr0v3s_t1m3_1s_1mmut4bl3}');
+          writeLine("Impressive enumeration. Let's talk: [ Insert_Email ] | [ Insert_LinkedIn ]");
+        } else {
+          state.awaitingPassword = false;
+          writeLine('Access denied. Incident logged.');
+        }
+        return;
+      }
+
+      const [cmd, ...args] = inputText.split(/\s+/);
+      const arg = args.join(' ');
+
+      switch (cmd.toLowerCase()) {
+        case 'help':
+          writeLine('Available commands: whoami, projects, certs, clear, ls, cd, cat, sudo su');
+          break;
+        case 'whoami':
+          writeLine('IDENTITY: Ommkar Ankit Rout. STATUS: B.Tech CSE (AI/ML). DIRECTIVE: Building intelligent systems and breaking them. Cisco Verified Ethical Hacker. Red Teamer.');
+          break;
+        case 'projects':
+          writeLine('[1] Mnemosyne - Persistent, time-aware data structures in Python (v0.5.0 deployed).');
+          writeLine('[2] AtmoSync - IoT micro-infrastructure + Blockchain security (BPUT Hackathon Winner).');
+          writeLine('[3] VulnScanner - CLI automated pentesting toolkit (socket scanning, banner grabbing).');
+          break;
+        case 'certs':
+          writeLine('QUERYING CREDENTIAL DATABASE...');
+          writeLine('[ID: CRTOM] Certified Red Team Operations Management | STATUS: VERIFIED');
+          writeLine('[ID: CEH] Cisco Verified Ethical Hacker | STATUS: VERIFIED');
+          writeLine('[ID: GCSP] Google Cybersecurity Professional | STATUS: VERIFIED');
+          break;
+        case 'clear':
+          clearWithAnim();
+          return;
+        case 'ls':
+          doLs(arg);
+          break;
+        case 'cd':
+          doCd(arg);
+          break;
+        case 'cat':
+          doCat(arg);
+          break;
+        case 'sudo':
+          if (arg === 'su') {
+            state.awaitingPassword = true;
+            writeLine('[sudo] password for guest:');
+          } else {
+            writeLine(`sudo: ${arg || ''}: command not permitted`);
+          }
+          break;
+        default:
+          writeLine(`command not found: ${cmd}`);
+      }
+    }
+
+    input.addEventListener('input', () => {
+      if (!state.activePromptLine) return;
+      const mask = state.awaitingPassword ? '*'.repeat(input.value.length) : input.value;
+      state.activePromptLine.cmd.textContent = mask;
+      scrollToBottom();
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const entered = input.value;
+        const shown = state.awaitingPassword ? '*'.repeat(entered.length) : entered;
+        lockPrompt(shown);
+        execute(entered);
+        input.value = '';
+        renderPrompt();
+      } else if (e.key === 'Tab') {
+        e.preventDefault();
+      }
+    });
+
+    document.addEventListener('click', () => input.focus());
+
+    function bootSequence() {
+      input.blur();
+      const boot = [
+        'INITIALIZING MEMORY... [OK]',
+        'DECRYPTING KERNEL PAYLOAD... [OK]',
+        'MOUNTING VIRTUAL FILE SYSTEM... [OK]',
+        'ESTABLISHING SECURE CONNECTION TO OHMICGUY.DEV...'
+      ];
+
+      const tl = gsap.timeline({ onComplete: () => {
+        gsap.to(terminal.children, {
+          opacity: 0,
+          duration: 0.3,
+          onComplete: () => {
+            terminal.innerHTML = '';
+            writeLine(banner);
+            writeLine('Secure shell initialized.', 'line muted');
+            writeLine('Type `help` to begin.', 'line muted');
+            renderPrompt();
+            input.focus();
+          }
+        });
+      }});
+
+      boot.forEach((line) => {
+        const node = writeLine('');
+        tl.to(node, { duration: 0.95, text: line, ease: 'none' })
+          .to({}, { duration: 0.15 });
+      });
+    }
+
+    // Three.js scene
+    const canvas = document.getElementById('bg-canvas');
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.z = 3;
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    const baseGeo = new THREE.IcosahedronGeometry(1, 1);
+    const wireGeo = new THREE.WireframeGeometry(baseGeo);
+    const mat = new THREE.LineBasicMaterial({ color: 0x00ff41, transparent: true, opacity: 0.85 });
+    const wire = new THREE.LineSegments(wireGeo, mat);
+    scene.add(wire);
+
+    let mouseX = 0;
+    let mouseY = 0;
+    window.addEventListener('mousemove', (e) => {
+      mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+      mouseY = (e.clientY / window.innerHeight) * 2 - 1;
+    });
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    function animate() {
+      const t = performance.now() * 0.001;
+      const boost = state.rotationBoost;
+      wire.rotation.y += 0.0028 * boost;
+      wire.rotation.x += 0.0017 * boost;
+
+      wire.rotation.y += mouseX * 0.0008;
+      wire.rotation.x += mouseY * 0.0008;
+
+      camera.position.x += (mouseX * 0.22 - camera.position.x) * 0.03;
+      camera.position.y += (-mouseY * 0.22 - camera.position.y) * 0.03;
+      camera.lookAt(0, 0, 0);
+
+      state.rotationBoost += (1 - state.rotationBoost) * 0.015;
+
+      wire.scale.setScalar(1 + Math.sin(t * 0.7) * 0.02);
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    }
+
+    bootSequence();
+    animate();
+  </script>
+</body>
+</html>
