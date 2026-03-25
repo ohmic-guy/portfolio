@@ -186,11 +186,11 @@
     };
 
     const banner = String.raw`
-   ____  _    _ __  __ ___ ____ ____ _   _ _   _ __   __
-  / __ \| |  | |  \/  |_ _/ ___/ ___| | | | | | |\ \ / /
- | |  | | |  | | |\/| || | |  | |  _| | | | | | | \ V / 
- | |__| | |__| | |  | || | |__| |_| | |_| | |_| |  | |  
-  \____/ \____/|_|  |_|___\____\____|\___/ \___/   |_|  
+   ____  _   _ __  __ ___ ____     ____ _   ___   __
+  / __ \| | | |  \/  |_ _/ ___|   / ___| | | \ \ / /
+ | |  | | |_| | |\/| || | |      | |  _| | | |\ V / 
+ | |__| |  _  | |  | || | |___   | |_| | |_| | | |  
+  \____/|_| |_|_|  |_|___\____|   \____|\___/  |_|  
 `;
 
     function scrollToBottom() {
@@ -216,6 +216,7 @@
     }
 
     function promptText() {
+      if (state.awaitingPassword) return '[sudo] password for guest:';
       return state.isRoot ? 'root@ohmicguy-server:#' : 'guest@ohmicguy-server:~$';
     }
 
@@ -371,7 +372,6 @@
         case 'sudo':
           if (arg === 'su') {
             state.awaitingPassword = true;
-            writeLine('[sudo] password for guest:');
           } else {
             writeLine(`sudo: ${arg || ''}: command not permitted`);
           }
@@ -383,15 +383,14 @@
 
     input.addEventListener('input', () => {
       if (!state.activePromptLine) return;
-      const mask = state.awaitingPassword ? '*'.repeat(input.value.length) : input.value;
-      state.activePromptLine.cmd.textContent = mask;
+      state.activePromptLine.cmd.textContent = state.awaitingPassword ? '' : input.value;
       scrollToBottom();
     });
 
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         const entered = input.value;
-        const shown = state.awaitingPassword ? '*'.repeat(entered.length) : entered;
+        const shown = state.awaitingPassword ? '' : entered;
         lockPrompt(shown);
         execute(entered);
         input.value = '';
