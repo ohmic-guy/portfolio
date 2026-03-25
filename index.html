@@ -153,7 +153,8 @@
       isRoot: false,
       awaitingPassword: false,
       activePromptLine: null,
-      rotationBoost: 1
+      rotationBoost: 1,
+      commandHistory: []
     };
 
     const fs = {
@@ -341,10 +342,40 @@
 
       switch (cmd.toLowerCase()) {
         case 'help':
-          writeLine('Available commands: whoami, projects, certs, clear, ls, cd, cat, sudo su');
+          writeLine('Available commands: help, whoami, projects, certs, clear, ls, cd, cat, pwd, history, skills, contact, hint, sudo su');
+          break;
+        case 'pwd':
+          writeLine(state.currentPath);
+          break;
+        case 'history':
+          if (!state.commandHistory.length) {
+            writeLine('history: no commands executed yet');
+            break;
+          }
+          state.commandHistory.forEach((entry, idx) => writeLine(`${idx + 1}  ${entry}`));
           break;
         case 'whoami':
           writeLine('IDENTITY: Ommkar Ankit Rout. STATUS: B.Tech CSE (AI/ML). DIRECTIVE: Building intelligent systems and breaking them. Cisco Verified Ethical Hacker. Red Teamer.');
+          break;
+        case 'skills':
+          writeLine('[OFFENSIVE] Recon, Vulnerability Assessment, CTF Workflow, Network Enumeration');
+          writeLine('[DEFENSIVE] Threat Modeling, Secure Architecture, Incident Analysis');
+          writeLine('[AI/ML] Python, Data Pipelines, Time-aware Structures, Applied ML Engineering');
+          break;
+        case 'contact':
+          writeLine('[MAIL] Insert_Email');
+          writeLine('[LINKEDIN] Insert_LinkedIn');
+          break;
+        case 'hint':
+          if (!arg || arg === '1') {
+            writeLine('[HINT-1] Sensitive keys are rarely kept in /home.');
+          } else if (arg === '2') {
+            writeLine('[HINT-2] Read logs before escalating. Try /var/log/.');
+          } else if (arg === '3') {
+            writeLine('[HINT-3] .auth_keys may hide encoded credentials (Base64).');
+          } else {
+            writeLine('hint: usage -> hint | hint 2 | hint 3');
+          }
           break;
         case 'projects':
           writeLine('[1] Mnemosyne - Persistent, time-aware data structures in Python (v0.5.0 deployed).');
@@ -390,8 +421,12 @@
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         const entered = input.value;
+        const shouldStoreHistory = !state.awaitingPassword && entered.trim().length > 0;
         const shown = state.awaitingPassword ? '' : entered;
         lockPrompt(shown);
+        if (shouldStoreHistory) {
+          state.commandHistory.push(entered.trim());
+        }
         execute(entered);
         input.value = '';
         renderPrompt();
