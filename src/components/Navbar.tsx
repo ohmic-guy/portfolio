@@ -81,7 +81,9 @@ const Navbar = () => {
           <div className="md:hidden">
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="text-cyan-400 hover:text-cyan-300 focus:outline-none"
+              aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={isMobileMenuOpen}
+              className="relative z-50 inline-flex h-11 w-11 items-center justify-center rounded-md border border-cyan-500/20 bg-white/5 text-cyan-400 transition-colors active:scale-95 hover:bg-white/10 hover:text-cyan-200 focus:outline-none focus:ring-2 focus:ring-cyan-400/60 touch-manipulation"
               data-testid="mobile-menu-btn"
             >
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
