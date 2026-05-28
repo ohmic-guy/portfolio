@@ -1,6 +1,4 @@
-import { useState, useEffect } from "react";
-import { Menu, X } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState } from "react";
 
 const navLinks = [
   { name: "Home", id: "hero" },
@@ -16,7 +14,6 @@ const navLinks = [
 const Navbar = () => {
   const [activeSection, setActiveSection] = useState("hero");
   const [scrollProgress, setScrollProgress] = useState(0);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -47,25 +44,24 @@ const Navbar = () => {
     const element = document.getElementById(id);
     if (element) {
       element.scrollIntoView({ behavior: "smooth" });
-      setIsMobileMenuOpen(false);
     }
   };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-[#050510]/96 backdrop-blur-xl border-b border-cyan-500/15 shadow-[0_10px_40px_rgba(0,0,0,0.35)]" data-testid="navbar">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center gap-3 h-16">
           <div className="flex-shrink-0 cursor-pointer" onClick={() => scrollTo("hero")}>
             <span className="font-display font-bold text-xl text-cyan-400 neon-glow tracking-widest">ohmic guy</span>
           </div>
-          
-          <div className="hidden md:block">
-            <div className="ml-10 flex items-baseline space-x-6">
+
+          <div className="flex-1 min-w-0 overflow-x-auto overscroll-x-contain pb-1 -mb-1">
+            <div className="flex items-center gap-2 sm:gap-3 whitespace-nowrap justify-start md:justify-end min-w-max md:min-w-0 md:ml-10">
               {navLinks.map((link) => (
                 <button
                   key={link.id}
                   onClick={() => scrollTo(link.id)}
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-all duration-300 ${
+                  className={`px-2.5 sm:px-3 py-2 rounded-md text-[0.72rem] sm:text-sm font-medium transition-all duration-300 ${
                     activeSection === link.id
                       ? "text-cyan-300 bg-cyan-400/10 active-nav-glow"
                       : "text-slate-200 hover:text-cyan-200 hover:bg-white/5"
@@ -77,47 +73,8 @@ const Navbar = () => {
               ))}
             </div>
           </div>
-
-          <div className="md:hidden">
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
-              aria-expanded={isMobileMenuOpen}
-              className="relative z-50 inline-flex h-11 w-11 items-center justify-center rounded-md border border-cyan-500/20 bg-white/5 text-cyan-400 transition-colors active:scale-95 hover:bg-white/10 hover:text-cyan-200 focus:outline-none focus:ring-2 focus:ring-cyan-400/60 touch-manipulation"
-              data-testid="mobile-menu-btn"
-            >
-              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-          </div>
         </div>
       </div>
-
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-[#050510]/98 backdrop-blur-xl border-t border-cyan-500/20 shadow-[0_20px_50px_rgba(0,0,0,0.45)]"
-          >
-            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-              {navLinks.map((link) => (
-                <button
-                  key={link.id}
-                  onClick={() => scrollTo(link.id)}
-                  className={`block w-full text-left px-3 py-2 rounded-md text-base font-medium ${
-                    activeSection === link.id
-                      ? "text-cyan-200 bg-cyan-500/12 border-l-2 border-cyan-300"
-                      : "text-slate-200 hover:text-cyan-100 hover:bg-white/5"
-                  }`}
-                >
-                  {link.name}
-                </button>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       <div 
         className="absolute bottom-0 left-0 h-[2px] bg-cyan-400 neon-glow transition-all duration-300"

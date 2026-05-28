@@ -96,6 +96,9 @@ img[src*="replit.com"],
 
   html {
     scroll-behavior: smooth;
+    scrollbar-gutter: stable both-edges;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 245, 255, 0.6) rgba(255, 255, 255, 0.04);
   }
 
   body {
@@ -175,18 +178,38 @@ img[src*="replit.com"],
 }
 
 /* Custom Scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 245, 255, 0.6) rgba(255, 255, 255, 0.04);
+}
+
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 11px;
+  height: 11px;
 }
+
+::-webkit-scrollbar:horizontal {
+  height: 10px;
+}
+
 ::-webkit-scrollbar-track {
-  background: hsl(var(--background));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+  border-left: 1px solid rgba(0, 245, 255, 0.06);
 }
+
 ::-webkit-scrollbar-thumb {
-  background: rgba(0, 245, 255, 0.3);
-  border-radius: 4px;
+  background: linear-gradient(180deg, rgba(0, 245, 255, 0.75), rgba(91, 194, 255, 0.45));
+  border-radius: 999px;
+  border: 2px solid rgba(5, 5, 16, 0.9);
+  box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.12);
 }
+
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 245, 255, 0.5);
+  background: linear-gradient(180deg, rgba(0, 245, 255, 0.95), rgba(91, 194, 255, 0.7));
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 /**
