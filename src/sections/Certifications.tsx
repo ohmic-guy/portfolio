@@ -4,6 +4,16 @@ import { SiGoogle, SiKaggle } from "react-icons/si";
 
 const certs = [
   {
+    name: "Google Cybersecurity Specialization",
+    issuer: "Google",
+    date: "Nov 2025",
+    credentialId: "UE987CYSLJL7",
+    icon: "google",
+    color: "text-blue-400",
+    border: "hover:border-blue-400/60",
+    gradient: "from-blue-500/10",
+  },
+  {
     name: "Certified Red Team Operations Management (CRTOM)",
     issuer: "Red Team Leaders",
     date: "Dec 2025",
@@ -20,16 +30,6 @@ const certs = [
     color: "text-cyan-400",
     border: "hover:border-cyan-400/60",
     gradient: "from-cyan-500/10",
-  },
-  {
-    name: "Google Cybersecurity Specialization",
-    issuer: "Google",
-    date: "Nov 2025",
-    credentialId: "UE987CYSLJL7",
-    icon: "google",
-    color: "text-blue-400",
-    border: "hover:border-blue-400/60",
-    gradient: "from-blue-500/10",
   },
   {
     name: "Certified Cybersecurity Educator Professional (CCEP)",
