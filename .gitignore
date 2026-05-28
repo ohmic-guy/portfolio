@@ -44,6 +44,6 @@ coverage/
 /.rts2_cache_es/
 
 # Optional: lockfiles (uncomment if you don't want to commit lockfiles)
-## package-lock.json
+package-lock.json
 ## pnpm-lock.yaml
 ## yarn.lock
