@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,6 +17,8 @@ const contactSchema = z.object({
 
 type ContactFormValues = z.infer<typeof contactSchema>;
 
+const gasWebAppUrl = import.meta.env.VITE_GAS_WEB_APP_URL as string | undefined;
+
 const socials = [
   { href: "https://linkedin.com/in/ohmicguy", icon: Linkedin, label: "LinkedIn" },
   { href: "https://github.com/ohmic-guy", icon: Github, label: "GitHub" },
@@ -25,15 +28,49 @@ const socials = [
 ];
 
 const Contact = () => {
+  const [submitState, setSubmitState] = useState<"idle" | "sending" | "success" | "error">("idle");
   const form = useForm<ContactFormValues>({
     resolver: zodResolver(contactSchema),
     defaultValues: { name: "", email: "", message: "" },
   });
 
-  const onSubmit = (data: ContactFormValues) => {
-    console.log("Form submitted:", data);
-    alert("Message intercepted and queued for transmission.");
-    form.reset();
+  const onSubmit = async (data: ContactFormValues) => {
+    if (!gasWebAppUrl) {
+      setSubmitState("error");
+      alert("Contact form is not configured. Set VITE_GAS_WEB_APP_URL first.");
+      return;
+    }
+
+    setSubmitState("sending");
+
+    try {
+      const body = new URLSearchParams({
+        name: data.name.trim(),
+        email: data.email.trim(),
+        message: data.message.trim(),
+        page: "portfolio-contact-form",
+      });
+
+      const response = await fetch(gasWebAppUrl, {
+        method: "POST",
+        mode: "cors",
+        body,
+      });
+
+      const result = await response.json().catch(() => null);
+
+      if (!response.ok || result?.ok === false) {
+        throw new Error(result?.error || `Request failed with status ${response.status}`);
+      }
+
+      setSubmitState("success");
+      form.reset();
+      alert("Message sent successfully.");
+    } catch (error) {
+      console.error("Contact form submission failed:", error);
+      setSubmitState("error");
+      alert("Failed to send message. Please try again.");
+    }
   };
 
   return (
@@ -152,10 +189,11 @@ const Contact = () => {
 
                   <button
                     type="submit"
+                    disabled={submitState === "sending"}
                     className="w-full py-4 bg-cyan-500/10 text-cyan-400 border border-cyan-400 rounded-sm font-display font-bold tracking-widest hover:bg-cyan-400/20 neon-glow transition-all flex items-center justify-center gap-2 group"
                     data-testid="btn-submit"
                   >
-                    <span>TRANSMIT</span>
+                    <span>{submitState === "sending" ? "SENDING" : "TRANSMIT"}</span>
                     <Send size={18} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
                   </button>
                 </form>

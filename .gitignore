@@ -45,5 +45,6 @@ coverage/
 
 # Optional: lockfiles (uncomment if you don't want to commit lockfiles)
 package-lock.json
+/google-apps-script
 ## pnpm-lock.yaml
 ## yarn.lock
