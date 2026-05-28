@@ -51,17 +51,11 @@ const Contact = () => {
         page: "portfolio-contact-form",
       });
 
-      const response = await fetch(gasWebAppUrl, {
+      await fetch(gasWebAppUrl, {
         method: "POST",
-        mode: "cors",
+        mode: "no-cors",
         body,
       });
-
-      const result = await response.json().catch(() => null);
-
-      if (!response.ok || result?.ok === false) {
-        throw new Error(result?.error || `Request failed with status ${response.status}`);
-      }
 
       setSubmitState("success");
       form.reset();

@@ -35,7 +35,7 @@ const About = () => {
             <div className="relative aspect-square max-w-md mx-auto rounded-lg border border-cyan-500/30 glass-panel overflow-hidden flex items-center justify-center">
               {/* Fallback avatar if no image */}
               <div className="w-full h-full bg-[#0a0a1a] flex items-center justify-center">
-                <span className="font-display text-8xl text-cyan-500/20 font-black tracking-tighter">OAR</span>
+                <span className="font-display text-8xl text-cyan-500/20 font-black tracking-tighter">OHMIC</span>
               </div>
               <div className="absolute inset-0 border border-cyan-400/50 rounded-lg pointer-events-none mix-blend-overlay" />
               {/* Corner brackets */}
