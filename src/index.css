@@ -51,6 +51,18 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* Hide any Replit badge/branding that may be injected by hosting or plugins */
+a[href*="replit.com"],
+img[src*="replit.com"],
+[class*="replit"],
+[id*="replit"],
+[data-testid*="replit"],
+[data-testid*="made-with"],
+[aria-label*="replit"] {
+  display: none !important;
+  visibility: hidden !important;
+}
+
 :root, .dark {
   --background: 236 82% 4%;
   --foreground: 210 100% 94%;

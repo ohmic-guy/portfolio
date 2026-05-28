@@ -25,5 +25,23 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Remove any injected "Made with Replit" badge elements if present in the DOM.
+      document.addEventListener('DOMContentLoaded', function () {
+        try {
+          const candidates = Array.from(document.querySelectorAll('a,div,span,img'));
+          candidates.forEach(n => {
+            const href = (n instanceof HTMLAnchorElement) ? n.href : (n.getAttribute && n.getAttribute('href'));
+            const src = (n instanceof HTMLImageElement) ? n.src : (n.getAttribute && n.getAttribute('src'));
+            const text = n.textContent || '';
+            if ((href && href.includes('replit.com')) || (src && src.includes('replit.com')) || /made with replit/i.test(text)) {
+              n.remove();
+            }
+          });
+        } catch (e) {
+          // noop
+        }
+      });
+    </script>
   </body>
 </html>
