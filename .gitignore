@@ -1,0 +1,49 @@
+# Node
+node_modules/
+
+# Production build
+dist/
+build/
+
+# Local env files
+.env
+.env.local
+.env.*.local
+
+# Vite cache
+.vite/
+
+# Editor directories and files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+
+# Dependency directories
+.pnpm-store/
+
+# Test coverage
+coverage/
+*.lcov
+
+# Misc
+.cache/
+.parcel-cache/
+/.rpt2_cache/
+/.rts2_cache_cjs/
+/.rts2_cache_es/
+
+# Optional: lockfiles (uncomment if you don't want to commit lockfiles)
+## package-lock.json
+## pnpm-lock.yaml
+## yarn.lock
