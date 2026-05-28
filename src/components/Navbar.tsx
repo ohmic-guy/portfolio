@@ -52,7 +52,7 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 glass-panel border-x-0 border-t-0" data-testid="navbar">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-[#050510]/96 backdrop-blur-xl border-b border-cyan-500/15 shadow-[0_10px_40px_rgba(0,0,0,0.35)]" data-testid="navbar">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex-shrink-0 cursor-pointer" onClick={() => scrollTo("hero")}>
@@ -67,8 +67,8 @@ const Navbar = () => {
                   onClick={() => scrollTo(link.id)}
                   className={`px-3 py-2 rounded-md text-sm font-medium transition-all duration-300 ${
                     activeSection === link.id
-                      ? "text-cyan-400 active-nav-glow"
-                      : "text-gray-300 hover:text-cyan-300"
+                      ? "text-cyan-300 bg-cyan-400/10 active-nav-glow"
+                      : "text-slate-200 hover:text-cyan-200 hover:bg-white/5"
                   }`}
                   data-testid={`nav-${link.id}`}
                 >
@@ -96,7 +96,7 @@ const Navbar = () => {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden glass-panel border-t border-cyan-500/20"
+            className="md:hidden bg-[#050510]/98 backdrop-blur-xl border-t border-cyan-500/20 shadow-[0_20px_50px_rgba(0,0,0,0.45)]"
           >
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
               {navLinks.map((link) => (
@@ -105,8 +105,8 @@ const Navbar = () => {
                   onClick={() => scrollTo(link.id)}
                   className={`block w-full text-left px-3 py-2 rounded-md text-base font-medium ${
                     activeSection === link.id
-                      ? "text-cyan-400 bg-cyan-500/10 border-l-2 border-cyan-400"
-                      : "text-gray-300 hover:text-cyan-300"
+                      ? "text-cyan-200 bg-cyan-500/12 border-l-2 border-cyan-300"
+                      : "text-slate-200 hover:text-cyan-100 hover:bg-white/5"
                   }`}
                 >
                   {link.name}
